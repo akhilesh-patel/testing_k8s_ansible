@@ -1,0 +1,16 @@
+---
+# vars file for config_master
+
+packages:
+        - docker
+        - kubeadm
+        - kubectl
+        - kubelet
+        - iproute-tc
+
+services:
+        - docker
+        - kubelet
+
+source_file: /root/ws_task_19/daemon.json
+destination_file: /etc/docker/daemon.json

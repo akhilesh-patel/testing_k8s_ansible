@@ -1,0 +1,94 @@
+---
+# tasks file for config_master
+
+- name: Configure yum repo for kubernetes
+  yum_repository:
+          name: Kubernetes
+          description: "yum repository for kubernetes"
+          baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
+          enabled: 1
+          gpgcheck: 1
+          repo_gpgcheck: 1
+          gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+  
+- name: "Install Docker, Kubeadm, kubectl, kubelet and IProutes"
+  package:
+          name: "{{ item }}"
+          state: present
+  loop: "{{ packages }}"
+
+- name: "enabling services"
+  service:
+          name: "{{ item }}"
+          state: started
+          enabled: yes
+  loop: "{{ services }}"
+
+
+- name: "to pull the config images"
+  shell: kubeadm config images pull
+  register: kubeadm_images
+
+- name: "dispalying kubeadm images"
+  debug:
+          var: kubeadm_images
+  ignore_errors: yes
+
+- name: "copying docker driver file"
+  copy:
+          src: "{{ source_file }}"
+          dest: "{{ destination_file }}"
+
+- name: " Restart docker service"
+  service:
+          name: "docker"
+          state: restarted
+
+
+- name: "Setting bridge to 1"
+  shell:
+          echo "1" > /proc/sys/net/bridge/bridge-nf-call-iptables
+  changed_when: false
+
+- name: Initialize the kuberntes
+  shell: "kubeadm init --pod-network-cidr=10.240.0.0/16 --ignore-preflight-errors=NumCPU --ignore-preflight-errors=Mem" 
+  ignore_errors: yes
+  args:
+          warn: false
+
+- name: "Configuration Files Setup"
+  file:
+          path: "$HOME/.kube"
+          state: directory
+
+- name: "Copying Configuration File"
+  copy:
+          src: /etc/kubernetes/admin.conf
+          dest: $HOME/.kube/config
+          remote_src: yes 
+
+- name: Setup kubeconfig for home user
+  shell: "chown $(id -u):$(id -g) $HOME/.kube/config"
+
+- name: "installing flannel"
+  shell: "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
+  args:
+          warn: false
+
+- name: "THE JOIN TOKEN"
+  command: "kubeadm token create --print-join-command"
+  register: x
+  ignore_errors: True
+
+- name: "Storing Token"
+  local_action: copy content={{ x.stdout }} dest=/tmp/token
+
+
+
+  #- name: "token"
+  #  debug:
+          #          msg: "{{ tokens.stdout }}"
+
+          #- name: "register host with join command"
+  #  local_action: copy content="{{ token.stdout_lines[0] }}" dest="/ws_task_19/join-command"
+

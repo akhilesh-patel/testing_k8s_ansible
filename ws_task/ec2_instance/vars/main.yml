@@ -1,0 +1,12 @@
+region: ap-south-1
+instance_type: t2.micro
+image:  ami-041db4a969fe3eb68
+vpc_subnet_id: subnet-c3c39a8f
+group_name: gauravmohanlal
+master_key_name:  recoverdatakey
+master_count: 1
+
+worker_key_name:  recoverdatakey
+worker_count: 2
+access_key: 
+secret_key: 

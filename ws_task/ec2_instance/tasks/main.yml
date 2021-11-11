@@ -1,0 +1,33 @@
+- name: Launch kubernetes master nodes
+  ec2:
+          region: "{{region}}"
+          key_name: "{{master_key_name}}"
+          instance_type: "{{instance_type}}"
+          image: "{{image}}"
+          group: "{{group_name}}"
+          vpc_subnet_id: "{{vpc_subnet_id}}"
+          count: "{{ master_count}}"
+          wait: yes
+          instance_tags:
+                  Name: kube_master
+          state: present
+          assign_public_ip: yes
+          aws_access_key: "{{access_key}}"
+          aws_secret_key: "{{secret_key}}"
+- name: Launch kubernetes worker nodes
+  ec2:
+          region: "{{region}}"
+          key_name: "{{worker_key_name}}"
+          instance_type: "{{instance_type}}"
+          image: "{{image}}"
+          group: "{{group_name}}"
+          vpc_subnet_id: "{{vpc_subnet_id}}"
+          count: "{{worker_count}}"
+          wait: yes
+          instance_tags:
+                  Name: kube_worker
+          state: present
+          assign_public_ip: yes
+          aws_access_key: "{{access_key}}"
+          aws_secret_key: "{{secret_key}}"
+

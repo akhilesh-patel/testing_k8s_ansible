@@ -1,0 +1,17 @@
+- hosts: localhost
+  vars_files:
+          - key.yml
+  roles:
+          - role: ec2_instance
+
+  tasks:
+          - meta: refresh_inventory
+
+- hosts: kube_master
+  roles:
+          - role: config_master
+
+
+- hosts: kube_worker
+  roles:
+          - role: config_worker

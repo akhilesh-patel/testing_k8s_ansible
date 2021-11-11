@@ -1,0 +1,63 @@
+---
+# tasks file for config_master
+
+- name: Configure yum repo for kubernetes
+  yum_repository:
+          name: Kubernetes
+          description: "yum repository for kubernetes"
+          baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
+          enabled: 1
+          gpgcheck: 1
+          repo_gpgcheck: 1
+          gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+  
+- name: "Install Docker, Kubeadm, kubectl, kubelet and IProutes"
+  package:
+          name: "{{ item }}"
+          state: present
+  loop: "{{ packages }}"
+
+- name: "enabling services"
+  service:
+          name: "{{ item }}"
+          state: started
+          enabled: yes
+  loop: "{{ services }}"
+
+
+- name: "copying docker driver file"
+  copy:
+          src: "{{ src_docker_file }}"
+          dest: "{{ dest_docker_file }}"
+
+- name: " Restart docker service"
+  service:
+          name: "docker"
+          state: restarted
+
+- name: "config file"
+  copy:
+          src: "{{ bridge_src}}"
+          dest: "{{bridge_dest}}"
+  register: result
+
+- name: "Load settings from all system cofiguration files"
+  shell: sysctl --system
+
+- name: "Sending master token authentication to Worker nodes"
+  copy:
+          src: /tmp/token
+          dest: /tmp/token
+
+- name: "Joining the cluster worker nodes with master"
+  shell: "bash /tmp/token"
+  ignore_errors: True
+  #- name: copy the join command to server location
+  #copy:
+  #       src: /ws_task_19/join-command
+  #       dest: /tmp/join-command.sh
+  #       mode: +x
+
+  #- name: join command
+  #shell: "sh /tmp/join-command.sh"
+
